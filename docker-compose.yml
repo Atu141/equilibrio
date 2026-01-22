@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Aplicação Web
+  web:
+    build: .
+    container_name: site_servicos_web
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: mysql://site_user:site_password@db:3306/site_servicos
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-min-32-chars}
+      VITE_APP_ID: ${VITE_APP_ID:-your-app-id}
+      VITE_APP_TITLE: Serralheria e Empreiteira Equilíbrio
+      VITE_APP_LOGO: /images/logo.png
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - site_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Banco de Dados MySQL
+  db:
+    image: mysql:8.0-alpine
+    container_name: site_servicos_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_USER: site_user
+      MYSQL_PASSWORD: site_password
+      MYSQL_DATABASE: site_servicos
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - site_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PhpMyAdmin (opcional - para gerenciar banco de dados via web)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: site_servicos_phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_USER: site_user
+      PMA_PASSWORD: site_password
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - site_network
+
+networks:
+  site_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local

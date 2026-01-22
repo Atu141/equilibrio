@@ -1,20 +1,25 @@
 services:
   - type: web
-    name: serralheria-equilibrio
+    name: site-servicos-residenciais
     env: node
-    plan: free
-    buildCommand: npm install && npm run build
-    startCommand: node dist/index.js
+    plan: starter
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
         fromDatabase:
-          name: serralheria-db
+          name: site-servicos-db
           property: connectionString
-    
-databases:
-  - name: serralheria-db
-    databaseName: serralheria
-    user: serralheria_user
-    plan: free
+      - key: JWT_SECRET
+        generateValue: true
+      - key: VITE_APP_TITLE
+        value: Serralheria e Empreiteira Equilíbrio
+
+  - type: mysql
+    name: site-servicos-db
+    plan: starter
+    databaseName: site_servicos
+    user: site_user
